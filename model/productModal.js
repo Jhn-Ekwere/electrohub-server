@@ -4,7 +4,13 @@ const reviewSchema = new mongoose.Schema(
   {
     name: String,
     comment: String,
-    rating: Number,
+    rating: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5,
+    },
+    userId: String,
   },
   { _id: false }
 );
@@ -21,6 +27,7 @@ const productSchema = new mongoose.Schema(
     },
     price: Number,
     discount: Number,
+    numReviews: Number,
     description: {
       type: String,
       required: false,
@@ -30,9 +37,9 @@ const productSchema = new mongoose.Schema(
       type: [String],
       required: true,
     },
-    isProductNew: Boolean,
+    isProductNew: { type: Boolean, required: true },
     reviews: [reviewSchema],
-    inStock: Boolean,
+    inStock: { type: Boolean, required: true },
     category: [String],
   },
   {

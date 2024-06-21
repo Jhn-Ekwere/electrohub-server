@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
 const User = require("../model/userModel");
+const { json } = require("express");
 
 const protect = asyncHandler(async (req, res, next) => {
   let token;
@@ -15,13 +16,13 @@ const protect = asyncHandler(async (req, res, next) => {
       next();
     } catch (error) {
       console.error(error);
-      res.status(401);
+      res.status(401).json({message: "Not authorized, token failed"});
       throw new Error("Not authorized, token failed");
     }
   }
 
   if (!token) {
-    res.status(401);
+    res.status(401).json({message: "Not authorized, no token"});
     throw new Error("Not authorized, no token");
   }
 });
@@ -30,8 +31,9 @@ const admin = (req, res, next) => {
   if (req.user && req.user.isAdmin) {
     next();
   } else {
-    res.status(401);
+    res.status(401),json({message: "Not authorized as an admin"});
     throw new Error("Not authorized as an admin");
+    
   }
 };
 

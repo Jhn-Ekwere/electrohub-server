@@ -1,11 +1,7 @@
-const cloudinary = require("cloudinary").v2;
 const asyncHandler = require("express-async-handler");
+ const cloudinary = require("../utils/cloudinary");
 
-cloudinary.config({
-  cloud_name: process.env.APP_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.APP_CLOUDINARY_API_KEY,
-  api_secret: process.env.APP_CLOUDINARY_SECRET,
-});
+
 
 const UploadMultiple = asyncHandler(async (req, res, next) => {
   const images = req.files;
@@ -19,7 +15,12 @@ const UploadMultiple = asyncHandler(async (req, res, next) => {
         upload_preset: "onlineShop",
         resource_type: "auto",
       });
-      imageUrls.push(result.secure_url);
+      const imageObject = {
+        url: result.secure_url,
+        public_id: result.public_id,
+      };
+      
+      imageUrls.push(imageObject);
     }
 
     req.images = imageUrls;

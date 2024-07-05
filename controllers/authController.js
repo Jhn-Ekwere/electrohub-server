@@ -3,6 +3,37 @@ const bcrypt = require("bcryptjs");
 const asyncHandler = require("express-async-handler");
 const User = require("../model/userModel");
 
+const loginSuccess = asyncHandler(async (req, res) => {
+  const user = req.user; // Assuming "roles" is the claim name
+  if (user) {
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: user.email });
+
+    if (existingUser) {
+      // User already exists, handle the case (e.g., log them in)
+      return res.send("User already exists!");
+    }
+
+    // Create a new user document
+    const newUser = new User({
+      email: user.email,
+      username: user.username,
+      profilePic: user.picture,
+      // Add other user data if needed
+    });
+
+    // Save the new user to MongoDB
+    await newUser.save();
+
+    res.send("User created successfully!");
+  } else {
+    res.status(401).json({
+      success: false,
+      message: "User failed to log in",
+    });
+  }
+});
+
 //@desc     Create user
 //@route    POST /api/users
 //@access   Public
@@ -75,20 +106,35 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 });
 
-
 //@desc     Get all users
 //@route    GET /api/users
 //@access   Public
 const getUsers = asyncHandler(async (req, res) => {
-  const users = await User.find();
+  const users = await User.find().select("-password");
   res.status(200).json(users);
+});
+
+const getUserById = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+  res.status(200).json(user);
+
+  res.status(200).json({
+    id: _id,
+    name,
+    email,
+    isAdmin,
+  });
 });
 
 //@desc     Get single user
 //@route    GET /api/users/:id
 //@access   Public
 const getMe = asyncHandler(async (req, res) => {
-  const { _id, name, email, isAdmin } = await User.findById(req.user.id);
+  const { _id, name, email, isAdmin } = await User.findById(req.user.id).select("-password");
 
   res.status(200).json({
     id: _id,
@@ -131,4 +177,4 @@ const generateToken = (id) => {
   });
 };
 
-module.exports = { getUsers, getMe, registerUser, updateUser, deleteUser, loginUser };
+module.exports = { getUsers, getMe, registerUser, updateUser, deleteUser, loginUser, loginSuccess, getUserById };

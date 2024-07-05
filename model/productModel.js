@@ -1,26 +1,12 @@
 const mongoose = require("mongoose");
 
-const reviewSchema = new mongoose.Schema(
-  {
-    name: String,
-    comment: String,
-    rating: {
-      type: Number,
-      required: true,
-      min: 1,
-      max: 5,
-    },
-    userId: String,
-  },
-  { _id: false }
-);
-
 const productSchema = new mongoose.Schema(
   {
-    title: {
-      type: String,
-      required: false,
-    },
+    name: { type: String, required: true }, // Name of the component (e.g., "100nF Capacitor")
+    category: { type: mongoose.Schema.Types.ObjectId, ref: "Category" }, // Category (e.g., "Capacitors", "ICs", "Transistors")
+    subcategory: { type: String }, // Optional subcategory (e.g., "Electrolytic Capacitor")
+    dataSheet: { type: String }, // URL or reference to the component's datasheet
+    manufacturer: { type: String }, // Manufacturer of the component
     images: {
       type: [
         {
@@ -36,8 +22,8 @@ const productSchema = new mongoose.Schema(
       ],
       required: true,
     },
-    price: Number,
     discount: Number,
+    price: { type: Number, required: true }, // Price of the component
     numReviews: Number,
     description: {
       type: String,
@@ -53,13 +39,17 @@ const productSchema = new mongoose.Schema(
       required: true,
       default: true,
     },
-    reviews: [reviewSchema],
+    reviews: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Review",
+      },
+    ],
     inStock: {
       type: Boolean,
       required: true,
       default: true,
     },
-    category: [String],
     quantity: Number,
   },
   {

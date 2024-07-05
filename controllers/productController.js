@@ -1,4 +1,4 @@
-const Product = require("../model/productModal");
+const Product = require("../model/productModel");
 const cloudinary = require("../utils/cloudinary");
 
 //@desc     Get all products
@@ -13,12 +13,10 @@ const getProducts = async (req, res) => {
 // @route    GET /api/products/:id
 // @access   Public
 const getProductById = async (req, res) => {
-  const product = await Product.findById(req.params.id);
-  if (product) {
-    res.json(product);
-  } else {
-    res.status(404);
-    throw new Error("Product not found");
+ const { id } = req.params;
+  const product = await Product.findById(id).populate("reviews");
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" });
   }
 };
 
@@ -27,14 +25,14 @@ const getProductById = async (req, res) => {
 // @access   Private/Admin
 const createProduct = async (req, res) => {
   const images = req.images;
-  const { title, price, discount, description, star, liked, isProductNew, reviews, inStock, category, quantity } =
+  const { name, price, discount, description, star, liked, isProductNew, reviews, inStock, category, quantity } =
     req.body;
   if (!images) {
     res.status(400);
     throw new Error("No image uploaded");
   } else {
     const product = new Product({
-      title,
+      name,
       images,
       price,
       discount,
@@ -58,11 +56,11 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   const newImages = req.files;
   const imageUrls = [];
-  const { title, price, discount, description, inStock, category, quantity } = req.body;
+  const { name, price, discount, description, inStock, category, quantity } = req.body;
   const product = await Product.findById(req.params.id);
   if (product) {
     const data = {
-      title,
+      name,
       price,
       discount,
       description,

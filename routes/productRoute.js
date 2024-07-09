@@ -11,13 +11,15 @@ const {
   getProductById,
   likeProduct,
   reviewProduct,
+  UnLikeProduct,
 } = require("../controllers/productController");
 
 router.route("/").get(getProducts);
 router.route("/like/:userId/:productId").put(jwtCheck, likeProduct);
+router.route("/unlike/:userId/:productId").put(jwtCheck, UnLikeProduct);
 router.route("/review/:userId/:productId").put(jwtCheck, reviewProduct);
-router.route("/create").post(jwtCheck, admin, upload.array("images"), multipleUpload, createProduct);
-router.route("/update/:id").put(jwtCheck, admin, upload.array("images"), updateProduct);
+router.route("/").post( upload.array("images"), multipleUpload, createProduct);
+router.route("/:id").put( upload.array("images"), updateProduct);
 router.route("/delete/:id").delete(jwtCheck, admin, deleteProduct);
 router.route("/:id").get(getProductById);
 

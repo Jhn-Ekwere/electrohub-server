@@ -1,18 +1,17 @@
 const asyncHandler = require("express-async-handler");
+const Order = require("../models/orderModel");
 
 //@desc Create a new order
 //@route POST /orders
 //@access Private
 const createOrder = asyncHandler(async (req, res) => {
-  const { user, products, totalPrice, shippingAddress } = req.body;
-
-  // Validate input data (optional)
+  const { user, products, totalAmount, shippingAddress } = req.body;
 
   try {
     const newOrder = new Order({
       user,
       products,
-      totalPrice,
+      totalAmount,
       shippingAddress,
       status: "placed", // Default order status (can be customized)
     });
@@ -58,14 +57,13 @@ const getOrderById = asyncHandler(async (req, res) => {
 //@access Private/Admin
 const updateOrder = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { products, totalPrice, shippingAddress, status } = req.body;
 
   // Validate input data (optional)
 
   try {
     const updatedOrder = await Order.findByIdAndUpdate(
       id,
-      { products, totalPrice, shippingAddress, status },
+      req.body,
       { new: true } // To return the updated order
     );
     if (!updatedOrder) {
@@ -75,7 +73,7 @@ const updateOrder = asyncHandler(async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-})
+});
 
 module.exports = {
   createOrder,

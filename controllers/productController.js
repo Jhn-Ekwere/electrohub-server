@@ -1,62 +1,113 @@
-const Product = require("../model/productModel");
+const Product = require("../models/productModel");
+const Like = require("../models/likesModel");
+const User = require("../models/userModel")
 const cloudinary = require("../utils/cloudinary");
-
-//@desc     Get all products
-//@route    GET /api/products
-//@access   Public
-const getProducts = async (req, res) => {
-  const products = await Product.find();
-  res.json(products);
-};
+const asyncHandler = require("express-async-handler");
 
 // @desc     Get single product
 // @route    GET /api/products/:id
 // @access   Public
-const getProductById = async (req, res) => {
- const { id } = req.params;
-  const product = await Product.findById(id).populate("reviews");
+const getProducts = asyncHandler(async (req, res) => {
+  const product = await Product.find()
+    .populate("reviews", "-__v -createdAt")
+    .populate("category", "-__v -createdAt")
+    .populate("subcategory", "-__v -createdAt")
+    .populate("likes", "-__v -createdAt");
+    
   if (!product) {
     return res.status(404).json({ message: "Product not found" });
   }
-};
+  res.json(product);
+});
+
+// @desc     Get single product
+// @route    GET /api/products/:id
+// @access   Public
+const getProductById = asyncHandler(async (req, res) => {
+ const { id } = req.params;
+  const product = await Product.findById(id)
+    .populate("reviews", "-__v -createdAt")
+    .populate("category", "-__v -createdAt")
+    .populate("subcategory", "-__v -createdAt")
+    .populate("likes", "-__v -createdAt");
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" });
+  }
+});
 
 // @desc     Create a product
 // @route    POST /api/products
 // @access   Private/Admin
-const createProduct = async (req, res) => {
+const createProduct = asyncHandler(async (req, res) => {
   const images = req.images;
-  const { name, price, discount, description, star, liked, isProductNew, reviews, inStock, category, quantity } =
-    req.body;
+  const {
+    name,
+    price,
+    discount,
+    description,
+    star,
+    likes,
+    isProductNew,
+    reviews,
+    inStock,
+    category,
+    quantity,
+    subcategory,
+    dataSheet,
+    manufacturer
+  } = req.body;
+
   if (!images) {
     res.status(400);
     throw new Error("No image uploaded");
   } else {
     const product = new Product({
       name,
+      category,
+      subcategory,
+      dataSheet,
+      manufacturer,
       images,
-      price,
       discount,
+      price,
+      numReviews: reviews?.length, // Assuming `reviews` is an array of ObjectId references
       description,
       star,
-      liked,
+      likes,
       isProductNew,
       reviews,
       inStock,
-      category,
       quantity,
     });
+
     const createdProduct = await product.save();
     res.status(200).json(createdProduct);
   }
-};
+});
 
 // @desc     Update a product
 // @route    PUT /api/products/:id
 // @access   Private/Admin
-const updateProduct = async (req, res) => {
+const updateProduct = asyncHandler(async (req, res) => {
   const newImages = req.files;
   const imageUrls = [];
-  const { name, price, discount, description, inStock, category, quantity } = req.body;
+ const {
+   name,
+   price,
+   discount,
+   description,
+   inStock,
+   category,
+   quantity,
+   subcategory,
+   dataSheet,
+   manufacturer,
+   numReviews,
+   star,
+   likes,
+   isProductNew,
+ } = req.body;
+ 
   const product = await Product.findById(req.params.id);
   if (product) {
     const data = {
@@ -67,6 +118,13 @@ const updateProduct = async (req, res) => {
       inStock,
       category,
       quantity,
+      subcategory,
+      dataSheet,
+      manufacturer,
+      numReviews,
+      star,
+      likes,
+      isProductNew,
     };
 
     if (newImages.length > 0) {
@@ -112,31 +170,63 @@ const updateProduct = async (req, res) => {
     res.status(404).json({ message: "Product not found" });
     throw new Error("Product not found");
   }
-};
+});
 
 // @desc     Like a product
 // @route    PUT /api/like/:userId/:productId
 // @access   Private
-const likeProduct = async (req, res) => {
-  const product = await Product.findById(req.params.productId);
-  if (product) {
-    if (product.liked.includes(req.params.userId)) {
-      product.liked = product.liked.filter((id) => id !== req.params.userId);
-    } else {
-      product.liked.push(req.params.userId);
-    }
-    const updatedProduct = await product.save();
-    res.json(updatedProduct);
-  } else {
-    res.status(404);
-    throw new Error("Product not found");
+const likeProduct = asyncHandler(async (req, res) => {
+  try {
+    const { userId, productId } = req.params;
+    const like = new Like({
+      user: userId,
+      product: productId,
+    });
+    await like.save();
+
+    await Product.findByIdAndUpdate(productId, {
+      $push: { likes: like._id },
+    });
+    await User.findByIdAndUpdate(productId, {
+      $push: { likes: like._id },
+    });
+
+    res.status(201)._construct(like);
+    
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
-};
+});
+
+// @desc     Unlike a product
+// @route    DELETE /api/unlike/:userId/:productId
+// @access   Private
+const UnLikeProduct = asyncHandler(async (req, res) => {
+  try {
+    const { userId, productId } = req.params;
+    const like = await Like.findOneAndDelete({ user: userId, product: productId });
+
+    if (!like) {
+      return res.status(400).json({ message: "You have not liked this product" });
+    }
+
+    await Product.findByIdAndUpdate(productId, {
+      $pull: { likes: like._id },
+    });
+    await User.findByIdAndUpdate(productId, {
+      $pull: { likes: like._id },
+    });
+    
+    res.status(201).json({ message: "Product unliked" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
 
 // @desc    Review a product
 // @route   PUT /api/products/review/:userId/:productId
 // @access  private/Admin
-const reviewProduct = async (req, res) => {
+const reviewProduct = asyncHandler(async (req, res) => {
   const { productId, userId } = req.params;
   const { rating, comment } = req.body;
 
@@ -169,12 +259,12 @@ const reviewProduct = async (req, res) => {
     res.status(404).json("Product not found");
     throw new Error("Product not found");
   }
-};
+});
 
 // @desc     Delete a product
 // @route    DELETE /api/products/delete/:id
 // @access   Private/Admin
-const deleteProduct = async (req, res) => {
+const deleteProduct = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
   if (product) {
     const imageIds = product.images;
@@ -204,7 +294,7 @@ const deleteProduct = async (req, res) => {
     res.status(404);
     throw new Error("Product not found");
   }
-};
+});
 
 module.exports = {
   getProducts,
@@ -213,5 +303,6 @@ module.exports = {
   updateProduct,
   deleteProduct,
   likeProduct,
+  UnLikeProduct,
   reviewProduct,
 };

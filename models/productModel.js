@@ -3,8 +3,8 @@ const mongoose = require("mongoose");
 const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true }, // Name of the component (e.g., "100nF Capacitor")
-    category: { type: mongoose.Schema.Types.ObjectId, ref: "Category" }, // Category (e.g., "Capacitors", "ICs", "Transistors")
-    subcategory: { type: String }, // Optional subcategory (e.g., "Electrolytic Capacitor")
+    category: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category" }], // Category (e.g., "Capacitors", "ICs", "Transistors")
+    subcategory: [{ type: mongoose.Schema.Types.ObjectId, ref: "SubCategory" }], // Optional subcategory (e.g., "Electrolytic Capacitor")
     dataSheet: { type: String }, // URL or reference to the component's datasheet
     manufacturer: { type: String }, // Manufacturer of the component
     images: {
@@ -24,16 +24,29 @@ const productSchema = new mongoose.Schema(
     },
     discount: Number,
     price: { type: Number, required: true }, // Price of the component
-    numReviews: Number,
+    numReviews: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
+    numLikes: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
     description: {
       type: String,
       required: false,
     },
-    star: Number,
-    liked: {
-      type: [String],
+    star: {
+      type: Number,
       required: true,
+      default: 1,
+      min: 1,
     },
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Like" }],
     isProductNew: {
       type: Boolean,
       required: true,

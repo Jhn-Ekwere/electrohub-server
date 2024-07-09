@@ -23,7 +23,7 @@ router.route("/register").post(registerUser);
 router.route("/").get(jwtCheck, protect, getUsers);
 router.route("/me").get(jwtCheck, protect, getMe);
 router.route("/:id").get(getUserById);
-router.route("/update").put(jwtCheck, protect, updateUser);
+router.route("/").put(jwtCheck, protect, updateUser);
 router.route("/:id").delete(jwtCheck, protect, deleteUser);
 
 router.route("/login/success").get(jwtCheck, protect, loginSuccess);

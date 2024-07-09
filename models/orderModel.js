@@ -7,6 +7,10 @@ const orderSchema = new mongoose.Schema({
   shippingAddress: { type: String }, // Shipping address
   status: { type: String, required: true }, // Order status (e.g., "placed", "shipped", "delivered")
   // ... other order details like payment information
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 const Order = mongoose.model("Order", orderSchema);

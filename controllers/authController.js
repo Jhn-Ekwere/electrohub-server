@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const asyncHandler = require("express-async-handler");
-const User = require("../model/userModel");
+const User = require("../models/userModel");
 
 const loginSuccess = asyncHandler(async (req, res) => {
   const user = req.user; // Assuming "roles" is the claim name
@@ -17,7 +17,7 @@ const loginSuccess = asyncHandler(async (req, res) => {
     // Create a new user document
     const newUser = new User({
       email: user.email,
-      username: user.username,
+      name: user.name,
       profilePic: user.picture,
       // Add other user data if needed
     });
@@ -110,7 +110,12 @@ const loginUser = asyncHandler(async (req, res) => {
 //@route    GET /api/users
 //@access   Public
 const getUsers = asyncHandler(async (req, res) => {
-  const users = await User.find().select("-password");
+  const users = await User.find()
+    .select("-password")
+    .populate("address", "-__v")
+    .populate("likes")
+    .populate("wishlist")
+    .populate("cart");
   res.status(200).json(users);
 });
 

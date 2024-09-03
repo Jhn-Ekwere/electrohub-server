@@ -1,7 +1,5 @@
 const asyncHandler = require("express-async-handler");
- const cloudinary = require("../utils/cloudinary");
-
-
+const cloudinary = require("../utils/cloudinary");
 
 const UploadMultiple = asyncHandler(async (req, res, next) => {
   const images = req.files;
@@ -19,7 +17,6 @@ const UploadMultiple = asyncHandler(async (req, res, next) => {
         url: result.secure_url,
         public_id: result.public_id,
       };
-      
       imageUrls.push(imageObject);
     }
 

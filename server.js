@@ -15,6 +15,7 @@ const wishlistRoutes = require("./routes/wishlistRoutes");
 const likesRoutes = require("./routes/likesRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const addressRoutes = require("./routes/addressRoutes");
+const matricsRoutes = require("./routes/matricsRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const { errorMiddleware } = require("./middleware/errorMiddleware");
 const connectDB = require("./config/db");
@@ -44,7 +45,7 @@ app.use("/api/like", likesRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/address", addressRoutes);
-
+app.use("/api/matrics", matricsRoutes);
 
 app.use(errorMiddleware);
 

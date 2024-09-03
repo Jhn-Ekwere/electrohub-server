@@ -22,7 +22,12 @@ const productSchema = new mongoose.Schema(
       ],
       required: true,
     },
-    discount: Number,
+    discount: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
     price: { type: Number, required: true }, // Price of the component
     numReviews: {
       type: Number,
@@ -63,7 +68,12 @@ const productSchema = new mongoose.Schema(
       required: true,
       default: true,
     },
-    quantity: Number,
+    quantity: {
+      type: Number,
+      required: true,
+      default: 1,
+      min: 1,
+    },
   },
   {
     timestamps: true,

@@ -3,43 +3,12 @@ const bcrypt = require("bcryptjs");
 const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 
-const loginSuccess = asyncHandler(async (req, res) => {
-  const user = req.user; // Assuming "roles" is the claim name
-  if (user) {
-    // Check if user already exists
-    const existingUser = await User.findOne({ email: user.email });
-
-    if (existingUser) {
-      // User already exists, handle the case (e.g., log them in)
-      return res.send("User already exists!");
-    }
-
-    // Create a new user document
-    const newUser = new User({
-      email: user.email,
-      name: user.name,
-      profilePic: user.picture,
-      // Add other user data if needed
-    });
-
-    // Save the new user to MongoDB
-    await newUser.save();
-
-    res.send("User created successfully!");
-  } else {
-    res.status(401).json({
-      success: false,
-      message: "User failed to log in",
-    });
-  }
-});
-
 //@desc     Create user
 //@route    POST /api/users
 //@access   Public
 const registerUser = asyncHandler(async (req, res) => {
-  const { email, password, isAdmin } = req.body;
-  if (!email || !password) {
+  const { name, email, password, role } = req.body;
+  if (!name || !email || !password) {
     res.status(400);
     throw new Error("Please add all fields");
   }
@@ -58,15 +27,16 @@ const registerUser = asyncHandler(async (req, res) => {
   // create user
   const user = await User.create({
     email,
+    name,
     password: hashedPassword,
-    isAdmin: isAdmin || false,
+    role: role || "user",
   });
 
   if (user) {
     res.status(201).json({
       _id: user._id,
       email: user.email,
-      isAdmin: user?.isAdmin,
+      role: user?.role,
       token: generateToken(user._id),
     });
   } else {
@@ -94,9 +64,17 @@ const loginUser = asyncHandler(async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (isMatch) {
       res.status(200).json({
-        _id: user._id,
+        role: user.role,
+        profilePicture: user.profilePicture,
+        id: user._id,
+        name: user.name,
         email: user.email,
-        isAdmin: user?.isAdmin,
+        address: user.address,
+        phoneNumber: user.phoneNumber,
+        likes: user.likes,
+        dateOfBirth: user.dateOfBirth,
+        wishlist: user.wishlist,
+        cart: user.cart,
         token: generateToken(user._id),
       });
     } else {
@@ -129,9 +107,8 @@ const getUserById = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     id: _id,
-    name,
-    email,
-    isAdmin,
+    name:user.name,
+    email:user.email,
   });
 });
 
@@ -139,27 +116,22 @@ const getUserById = asyncHandler(async (req, res) => {
 //@route    GET /api/users/:id
 //@access   Public
 const getMe = asyncHandler(async (req, res) => {
-  const { _id, name, email, isAdmin } = await User.findById(req.user.id).select("-password");
+  const user = await User.findById(req.user.id).select("-password -createdAt -__v");
 
-  res.status(200).json({
-    id: _id,
-    name,
-    email,
-    isAdmin,
-  });
+  res.status(200).json(user);
 });
 
 //@desc     Update user
 //@route    PUT /api/users/:id
 //@access   Public
 const updateUser = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user.id);
+  const user = await User.findById(req.params.id);
   if (!user) {
     res.status(404);
     throw new Error("User not found");
   }
   await user.updateOne(req.body);
-  res.status(200).json({ message: `Updated user with id ${req.user.id}!` });
+  res.status(200).json({ message: `Updated user with id ${req.params.id}!` });
 });
 
 //@desc     Delete user
@@ -172,14 +144,14 @@ const deleteUser = asyncHandler(async (req, res) => {
     throw new Error("User not found");
   }
   await user.deleteOne();
-  res.status(200).json({ message: `Delete user with id ${req.params.id}!` });
+  res.status(200).json({ message: `Deleted user with id ${req.params.id}!` });
 });
 
 // Generate token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "3d",
+    expiresIn: "1d",
   });
 };
 
-module.exports = { getUsers, getMe, registerUser, updateUser, deleteUser, loginUser, loginSuccess, getUserById };
+module.exports = { getUsers, getMe, registerUser, updateUser, deleteUser, loginUser, getUserById };

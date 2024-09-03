@@ -1,6 +1,6 @@
 const Product = require("../models/productModel");
 const Like = require("../models/likesModel");
-const User = require("../models/userModel")
+const User = require("../models/userModel");
 const cloudinary = require("../utils/cloudinary");
 const asyncHandler = require("express-async-handler");
 
@@ -13,7 +13,7 @@ const getProducts = asyncHandler(async (req, res) => {
     .populate("category", "-__v -createdAt")
     .populate("subcategory", "-__v -createdAt")
     .populate("likes", "-__v -createdAt");
-    
+
   if (!product) {
     return res.status(404).json({ message: "Product not found" });
   }
@@ -24,7 +24,7 @@ const getProducts = asyncHandler(async (req, res) => {
 // @route    GET /api/products/:id
 // @access   Public
 const getProductById = asyncHandler(async (req, res) => {
- const { id } = req.params;
+  const { id } = req.params;
   const product = await Product.findById(id)
     .populate("reviews", "-__v -createdAt")
     .populate("category", "-__v -createdAt")
@@ -54,7 +54,7 @@ const createProduct = asyncHandler(async (req, res) => {
     quantity,
     subcategory,
     dataSheet,
-    manufacturer
+    manufacturer,
   } = req.body;
 
   if (!images) {
@@ -91,23 +91,23 @@ const createProduct = asyncHandler(async (req, res) => {
 const updateProduct = asyncHandler(async (req, res) => {
   const newImages = req.files;
   const imageUrls = [];
- const {
-   name,
-   price,
-   discount,
-   description,
-   inStock,
-   category,
-   quantity,
-   subcategory,
-   dataSheet,
-   manufacturer,
-   numReviews,
-   star,
-   likes,
-   isProductNew,
- } = req.body;
- 
+  const {
+    name,
+    price,
+    discount,
+    description,
+    inStock,
+    category,
+    quantity,
+    subcategory,
+    dataSheet,
+    manufacturer,
+    numReviews,
+    star,
+    likes,
+    isProductNew,
+  } = req.body;
+
   const product = await Product.findById(req.params.id);
   if (product) {
     const data = {
@@ -192,7 +192,6 @@ const likeProduct = asyncHandler(async (req, res) => {
     });
 
     res.status(201)._construct(like);
-    
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -216,7 +215,7 @@ const UnLikeProduct = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(productId, {
       $pull: { likes: like._id },
     });
-    
+
     res.status(201).json({ message: "Product unliked" });
   } catch (err) {
     res.status(400).json({ message: err.message });

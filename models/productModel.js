@@ -7,6 +7,11 @@ const productSchema = new mongoose.Schema(
     subcategory: [{ type: mongoose.Schema.Types.ObjectId, ref: "SubCategory" }], // Optional subcategory (e.g., "Electrolytic Capacitor")
     dataSheet: { type: String }, // URL or reference to the component's datasheet
     manufacturer: { type: String }, // Manufacturer of the component
+    isFeatured: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
     images: {
       type: [
         {

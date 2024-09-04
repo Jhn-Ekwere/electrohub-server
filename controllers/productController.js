@@ -55,6 +55,7 @@ const createProduct = asyncHandler(async (req, res) => {
     subcategory,
     dataSheet,
     manufacturer,
+    isFeatured,
   } = req.body;
 
   if (!images) {
@@ -77,6 +78,7 @@ const createProduct = asyncHandler(async (req, res) => {
       isProductNew,
       reviews,
       inStock,
+      isFeatured,
       quantity,
     });
 
@@ -106,6 +108,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     star,
     likes,
     isProductNew,
+    isFeatured,
   } = req.body;
 
   const product = await Product.findById(req.params.id);
@@ -125,9 +128,10 @@ const updateProduct = asyncHandler(async (req, res) => {
       star,
       likes,
       isProductNew,
+      isFeatured,
     };
 
-    if (newImages.length > 0) {
+    if (newImages || newImages?.length > 0) {
       // delete images
       const imageIds = product.images;
       const deletionResults = await Promise.all(
@@ -165,7 +169,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     }
 
     const updatedProduct = await product.updateOne(data);
-    res.json({ messages: "Product updated successfully", updatedProduct });
+    res.status(200).json({ messages: "Product updated successfully", updatedProduct });
   } else {
     res.status(404).json({ message: "Product not found" });
     throw new Error("Product not found");

@@ -131,7 +131,7 @@ const updateProduct = asyncHandler(async (req, res) => {
       isFeatured,
     };
 
-    if (newImages || newImages?.length > 0) {
+    if (newImages && newImages?.length > 0) {
       // delete images
       const imageIds = product.images;
       const deletionResults = await Promise.all(

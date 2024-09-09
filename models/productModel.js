@@ -9,7 +9,6 @@ const productSchema = new mongoose.Schema(
     manufacturer: { type: String }, // Manufacturer of the component
     isFeatured: {
       type: Boolean,
-      required: true,
       default: false,
     },
     images: {

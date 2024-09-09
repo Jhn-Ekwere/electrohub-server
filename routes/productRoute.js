@@ -15,8 +15,6 @@ const {
 } = require("../controllers/productController");
 
 router.route("/").get(getProducts);
-router.route("/like/:userId/:productId").put( likeProduct);
-router.route("/unlike/:userId/:productId").put( UnLikeProduct);
 router.route("/review/:userId/:productId").put( reviewProduct);
 router.route("/").post(upload.array("images"), multipleUpload, protect, admin, createProduct);
 router.route("/:id").put(upload.array("images"), updateProduct);

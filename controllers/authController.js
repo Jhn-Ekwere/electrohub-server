@@ -34,7 +34,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   if (user) {
     res.status(201).json({
-      _id: user._id,
+      id: user._id,
       email: user.email,
       role: user?.role,
       token: generateToken(user._id),
@@ -107,8 +107,8 @@ const getUserById = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     id: _id,
-    name:user.name,
-    email:user.email,
+    name: user.name,
+    email: user.email,
   });
 });
 

@@ -1,6 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const Like = require("../models/likesModel");
-const Product = require("../models/productModel")
+const Product = require("../models/productModel");
 
 // @desc    Toggle a like on a product
 // @route   POST /api/likes/:productId
@@ -23,7 +23,7 @@ toggleLike = asyncHandler(async (req, res) => {
     product.likes.pull(existingLike._id);
     product.numLikes = product.numLikes - 1;
     await product.save();
-    res.json({ message: "Like removed" });
+    res.status(200).json({ message: "Like removed" });
   } else {
     // User has not liked the product, add a new like
     const like = new Like({ user: userId, product: productId });
@@ -36,7 +36,6 @@ toggleLike = asyncHandler(async (req, res) => {
     res.status(201).json({ message: "Like added and review updated" });
   }
 });
-
 
 module.exports = {
   toggleLike,

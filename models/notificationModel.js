@@ -8,4 +8,12 @@ const notificationSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
+notificationSchema.virtual("id").get(function () {
+  return this._id.toHexString();
+});
+
+notificationSchema.set("toJSON", {
+  virtuals: true,
+});
+
 const Notification = mongoose.model("Notification", notificationSchema);

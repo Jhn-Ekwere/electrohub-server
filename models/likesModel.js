@@ -17,6 +17,14 @@ const likeSchema = new mongoose.Schema({
     }
 });
 
+likeSchema.virtual("id").get(function () {
+  return this._id.toHexString();
+});
+
+likeSchema.set("toJSON", {
+  virtuals: true,
+});
+
 const Like = mongoose.model('Like', likeSchema);
 
 module.exports = Like;

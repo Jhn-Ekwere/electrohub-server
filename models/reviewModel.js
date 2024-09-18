@@ -19,5 +19,14 @@ const reviewSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }, // Timestamp of the review creation
 });
 
+reviewSchema.virtual("id").get(function () {
+  return this._id.toHexString();
+});
+
+reviewSchema.set("toJSON", {
+  virtuals: true,
+});
+
+
 const Review = mongoose.model("Review", reviewSchema);
 module.exports = Review;

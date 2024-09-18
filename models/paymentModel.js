@@ -35,6 +35,14 @@ const paymentSchema = new mongoose.Schema({
   },
 });
 
+paymentSchema.virtual("id").get(function () {
+  return this._id.toHexString();
+});
+
+paymentSchema.set("toJSON", {
+  virtuals: true,
+});
+
 const Payment = mongoose.model("Payment", paymentSchema);
 
 module.exports = Payment;

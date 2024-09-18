@@ -23,6 +23,15 @@ const cartSchema = new mongoose.Schema({
     }
 });
 
+cartSchema.virtual("id").get(function () {
+  return this._id.toHexString();
+});
+
+cartSchema.set("toJSON", {
+    virtuals: true,
+    });
+ 
+
 const Cart = mongoose.model('Cart', cartSchema);
 
 module.exports = Cart;

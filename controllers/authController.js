@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 const cloudinary = require("../utils/cloudinary");
+const Address = require("../models/addressModel");
 
 //@desc     Create user
 //@route    POST /api/users
@@ -57,7 +58,7 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   // check if user exsits
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }).populate("address", "-__v");
   if (!user) {
     res.status(400);
     throw new Error("Invalid credentials");
@@ -95,7 +96,8 @@ const getUsers = asyncHandler(async (req, res) => {
     .populate("address", "-__v")
     .populate("likes")
     .populate("wishlist")
-    .populate("cart");
+    .populate("cart")
+    .populate("address");
   res.status(200).json(users);
 });
 
@@ -128,16 +130,44 @@ const getMe = asyncHandler(async (req, res) => {
 //@access   Public
 const updateUser = asyncHandler(async (req, res) => {
   const image = req.files[0];
-  const { firstName, lastName, profilePicture, email, address, phone, likes, dateOfBirth, wishlist, cart, role } =
-    req.body;
+  const {
+    firstName,
+    lastName,
+    profilePicture,
+    email,
+    city,
+    street,
+    state,
+    country,
+    postalCode,
+    phone,
+    likes,
+    dateOfBirth,
+    wishlist,
+    cart,
+    role,
+
+  } = req.body;
+
+  const newAddress = new Address({
+    street,
+    city,
+    state,
+    country,
+    postalCode,
+  })
+  
+  const address = await newAddress.save();
+
   const user = await User.findById(req.params.id);
+
   let data = {
     firstName,
     lastName,
     profilePicture,
     firstName,
     email,
-    address,
+    address: address._id,
     phone,
     likes,
     dateOfBirth,

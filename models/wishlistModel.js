@@ -18,6 +18,15 @@ const wishlistSchema = new mongoose.Schema({
   },
 });
 
+wishlistSchema.virtual("id").get(function () {
+  return this._id.toHexString();
+});
+
+wishlistSchema.set("toJSON", {
+  virtuals: true,
+});
+
+
 const Wishlist = mongoose.model('Wishlist', wishlistSchema);
 
 module.exports = Wishlist;

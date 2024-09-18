@@ -25,8 +25,7 @@ const userSchema = new mongoose.Schema({
     required: true,
     default: false,
   },
-  // address: [{ type: mongoose.Schema.Types.ObjectId, ref: "Address" }],
-  address: { type: String, required: false },
+  address: { type: mongoose.Schema.Types.ObjectId, ref: "Address" },
   phone: { type: String, required: false },
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Like" }],
   dateOfBirth: { type: Date },
@@ -58,6 +57,15 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+});
+
+
+userSchema.virtual("id").get(function () {
+  return this._id.toHexString();
+});
+
+userSchema.set("toJSON", {
+  virtuals: true,
 });
 
 const User = mongoose.model("User", userSchema);

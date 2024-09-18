@@ -20,6 +20,16 @@ const subCategorySchema = new mongoose.Schema({
   },
 });
 
+
+subCategorySchema.virtual("id").get(function () {
+  return this._id.toHexString();
+});
+
+subCategorySchema.set("toJSON", {
+  virtuals: true,
+});
+
+
 const SubCategory = mongoose.model("SubCategory", subCategorySchema);
 
 module.exports = SubCategory;

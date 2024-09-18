@@ -9,7 +9,6 @@ addAddress = asyncHandler(async (req, res) => {
   const { street, city, state, country, postalCode, user } = req.body;
 
   const address = new Address({
-    user,
     street,
     city,
     state,

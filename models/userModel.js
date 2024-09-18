@@ -1,7 +1,11 @@
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-  name: {
+  firstName: {
+    type: String,
+    required: false,
+  },
+  lastName: {
     type: String,
     required: false,
   },
@@ -21,25 +25,40 @@ const userSchema = new mongoose.Schema({
     required: true,
     default: false,
   },
-  address: [{ type: mongoose.Schema.Types.ObjectId, ref: "Address" }],
-  phoneNumber: { type: String, required: false },
+  // address: [{ type: mongoose.Schema.Types.ObjectId, ref: "Address" }],
+  address: { type: String, required: false },
+  phone: { type: String, required: false },
   likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Like" }],
   dateOfBirth: { type: Date },
-  profilePicture: { type: String }, // URL to the image
+  profilePicture: {
+    type: [
+      {
+        public_id: {
+          type: String,
+          required: true,
+        },
+        url: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
+    required: true,
+  }, // URL to the image
   role: { type: String, default: "user", enum: ["user", "admin", "marchant"] }, // User roles
   wishlist: { type: mongoose.Schema.Types.ObjectId, ref: "Wishlist" }, // Array of product IDs
-  cart: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Cart",
-  }],
+  cart: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Cart",
+    },
+  ],
 
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
-
-
 
 const User = mongoose.model("User", userSchema);
 

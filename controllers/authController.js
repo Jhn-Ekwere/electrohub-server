@@ -2,13 +2,14 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
+const cloudinary = require("../utils/cloudinary");
 
 //@desc     Create user
 //@route    POST /api/users
 //@access   Public
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, role } = req.body;
-  if (!name || !email || !password) {
+  const { firstname, email, password, role } = req.body;
+  if (!firstname || !email || !password) {
     res.status(400);
     throw new Error("Please add all fields");
   }
@@ -27,7 +28,7 @@ const registerUser = asyncHandler(async (req, res) => {
   // create user
   const user = await User.create({
     email,
-    name,
+    firstname,
     password: hashedPassword,
     role: role || "user",
   });
@@ -67,10 +68,11 @@ const loginUser = asyncHandler(async (req, res) => {
         role: user.role,
         profilePicture: user.profilePicture,
         id: user._id,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
         address: user.address,
-        phoneNumber: user.phoneNumber,
+        phone: user.phone,
         likes: user.likes,
         dateOfBirth: user.dateOfBirth,
         wishlist: user.wishlist,
@@ -107,7 +109,7 @@ const getUserById = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     id: _id,
-    name: user.name,
+    firstname: user.firstname,
     email: user.email,
   });
 });
@@ -125,12 +127,72 @@ const getMe = asyncHandler(async (req, res) => {
 //@route    PUT /api/users/:id
 //@access   Public
 const updateUser = asyncHandler(async (req, res) => {
+  const image = req.files[0];
+  const { firstName, lastName, profilePicture, email, address, phone, likes, dateOfBirth, wishlist, cart, role } =
+    req.body;
   const user = await User.findById(req.params.id);
+  let data = {
+    firstName,
+    lastName,
+    profilePicture,
+    firstName,
+    email,
+    address,
+    phone,
+    likes,
+    dateOfBirth,
+    wishlist,
+    cart,
+  };
+  if (user.role === "admin") {
+    data = {
+      ...data,
+      role,
+    };
+  }
   if (!user) {
     res.status(404);
     throw new Error("User not found");
   }
-  await user.updateOne(req.body);
+
+  if (image) {
+    // delete images
+    const deleteProfilePicture = async (user) => {
+      const imageId = user.profilePicture;
+
+      if (imageId) {
+        try {
+          // Await the result of the deletion promise
+          const deletionResult = await cloudinary.uploader.destroy(imageId[0].public_id);
+
+          // Check if the deletion was successful
+          if (deletionResult.result === "ok") {
+            console.log("Successfully deleted the image");
+          } else {
+            console.error("Failed to delete the image:", deletionResult);
+          }
+        } catch (error) {
+          // Handle any errors that occur during deletion
+          console.error("Error during image deletion:", error);
+        }
+      }
+    };
+
+    // Example usage of async function
+    await deleteProfilePicture(user);
+    // image url to cloudinary
+
+    const result = await cloudinary.uploader.upload(image.path, {
+      upload_preset: "onlineShop",
+      resource_type: "auto",
+    });
+    const imageObject = {
+      url: result.secure_url,
+      public_id: result.public_id,
+    };
+    data.profilePicture = imageObject;
+  }
+  await user.updateOne(data);
   res.status(200).json({ message: `Updated user with id ${req.params.id}!` });
 });
 

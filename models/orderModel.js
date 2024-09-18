@@ -2,12 +2,27 @@ const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Reference to the user who placed the order
-  products: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }], // Array of ordered products (references to Product table)
+  orderItems: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "OrderItem",
+      required: true,
+    },
+  ], // Array of ordered items (references to orderItem table)
+  
+  shippingAddress1: { type: String }, // Shipping address1
+  shippingAddress2: { type: String }, // Shipping address2
+  city: { type: String, required: true }, // City
+  zip: { type: String, required: true }, // Zip code
+  country: { type: String, required: true }, // Country
+  phone: { type: String, required: true }, // Phone number
+  status: {
+    type: String, required: true,
+    default: "pending",
+  }, // Order status (e.g., "placed", "shipped", "delivered")
   totalAmount: { type: Number, required: true },
-  shippingAddress: { type: String }, // Shipping address
-  status: { type: String, required: true }, // Order status (e.g., "placed", "shipped", "delivered")
   // ... other order details like payment information
-  createdAt: {
+  dateOrdered: {
     type: Date,
     default: Date.now,
   },

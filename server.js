@@ -19,6 +19,7 @@ const matricsRoutes = require("./routes/matricsRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const { errorMiddleware } = require("./middleware/errorMiddleware");
 const connectDB = require("./config/db");
+const serverless = require("serverless-http");
 require("colors");
 
 connectDB();
@@ -43,7 +44,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/like", likesRoutes);
 app.use("/api/payment", paymentRoutes);
-app.use("/api/notification", notificationRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use("/api/address", addressRoutes);
 app.use("/api/matrics", matricsRoutes);
 
@@ -52,3 +53,10 @@ app.use(errorMiddleware);
 app.listen(port, () => {
   console.log(`Server listening at port ${port}`);
 });
+
+const handler = serverless(app);
+
+module.exports.handler = async (event, context) => {
+  const result = await handler(event, context);
+  return result;
+};

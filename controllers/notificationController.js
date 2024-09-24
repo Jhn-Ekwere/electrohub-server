@@ -1,29 +1,33 @@
 const asyncHandler = require("express-async-handler");
-const Notification = require("../models/notificationModel"); 
-
+const Notification = require("../models/notificationModel");
 
 // @desc    Create a new notification
 // @route   POST /api/notifications
 // @access  Private
-createNotification = asyncHandler(async (req, res) => {
-  const { recipient, title, message } = req.body;
+const createNotification = asyncHandler(async (req, res) => {
+  const { recipient, title, message, orderId, shortId } = req.body;
 
-  const notification = await Notification.create({
+  const notification = new Notification({
     recipient,
     title,
     message,
+    orderId,
+    shortId,
   });
 
-  res.status(201).json(notification);
+  const newNotification = await notification.save();
+  res.status(201).json(newNotification);
 });
 
 // @desc    Get notifications for a user
 // @route   GET /api/notifications/:userId
 // @access  Private
-getNotificationsForUser = asyncHandler(async (req, res) => {
+const getNotificationsForUser = asyncHandler(async (req, res) => {
   const { userId } = req.params;
 
-  const notifications = await Notification.find({ recipient: userId }).sort({ createdAt: -1 });
+  const notifications = await Notification.find({ recipient: userId })
+    .sort({ createdAt: -1 })
+    .populate("recipient", "name email");
 
   res.json(notifications);
 });
@@ -31,7 +35,7 @@ getNotificationsForUser = asyncHandler(async (req, res) => {
 // @desc    Mark notification as read
 // @route   PUT /api/notifications/:notificationId/read
 // @access  Private
-markNotificationAsRead = asyncHandler(async (req, res) => {
+const markNotificationAsRead = asyncHandler(async (req, res) => {
   const { notificationId } = req.params;
 
   const notification = await Notification.findByIdAndUpdate(notificationId, { isRead: true }, { new: true });
@@ -47,7 +51,7 @@ markNotificationAsRead = asyncHandler(async (req, res) => {
 // @desc    Delete notification
 // @route   DELETE /api/notifications/:notificationId
 // @access  Private
-deleteNotification = asyncHandler(async (req, res) => {
+const deleteNotification = asyncHandler(async (req, res) => {
   const { notificationId } = req.params;
 
   const notification = await Notification.findByIdAndDelete(notificationId);
@@ -59,7 +63,6 @@ deleteNotification = asyncHandler(async (req, res) => {
 
   res.json({ message: "Notification deleted successfully" });
 });
-
 
 module.exports = {
   createNotification,

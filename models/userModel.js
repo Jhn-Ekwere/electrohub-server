@@ -46,12 +46,14 @@ const userSchema = new mongoose.Schema({
   }, // URL to the image
   role: { type: String, default: "user", enum: ["user", "admin", "marchant"] }, // User roles
   wishlist: { type: mongoose.Schema.Types.ObjectId, ref: "Wishlist" }, // Array of product IDs
-  cart: [
+  cart: 
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Cart",
     },
-  ],
+  
+  resetPasswordToken: String,
+  resetPasswordExpires: Date,
 
   createdAt: {
     type: Date,

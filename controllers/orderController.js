@@ -6,53 +6,41 @@ const OrderItem = require("../models/orderItem");
 //@route POST /orders
 //@access Private
 const createOrder = asyncHandler(async (req, res) => {
-  const { user,
-          products,
-          totalAmount,
-          shippingAddress1,
-          shippingAddress2,
-          city,
-          zip,
-          orderItems,
-          status,
-          country,
-          phone, } = req.body;
-  const orderItemsIds = Promise.all( orderItems.map(async (orderItem) => {
-    let newOrderItem = new OrderItem({
-      quantity: orderItem.quantity,
-      product: orderItem.product
-    });
+  const { user, shippingAddress1, city, postalCode, orderItems, country, phone } = req.body;
+  const orderItemsIds = Promise.all(
+    orderItems.map(async (orderItem) => {
+      let newOrderItem = new OrderItem({
+        quantity: orderItem.quantity,
+        product: orderItem.product,
+      });
 
-    newOrderItem = await newOrderItem.save();
-    return newOrderItem._id;
-  }))
+      newOrderItem = await newOrderItem.save();
+      return newOrderItem._id;
+    })
+  );
   const orderItemsIdsResolved = await orderItemsIds;
-  
-  const totalPrices = await Promise.all(orderItemsIdsResolved.map(async (orderItemId) => {
-    const orderItem = await OrderItem.findById(orderItemId).populate("product", "totalAmount");
-    const totalPrice = orderItem.product.price * orderItem.quantity;
-    return totalPrice;
-  }
-  ));
+
+  const totalPrices = await Promise.all(
+    orderItemsIdsResolved.map(async (orderItemId) => {
+      const orderItem = await OrderItem.findById(orderItemId).populate("product");
+      const totalPrice = orderItem.product.price * orderItem.quantity;
+      return totalPrice;
+    })
+  );
   
   const totalPricesResolved = totalPrices.reduce((a, b) => a + b, 0);
-
+  
   try {
-    const newOrder = new Order({
-      user,
-      products,
-      totalAmount: totalPrices,
-      shippingAddress1,
-      shippingAddress2,
-      city,
-      zip,
-      country,
-      phone,
-      orderItems: totalPricesResolved,
-
-      status, // Default order status (can be customized)
-    });
-
+      const newOrder = new Order({
+        user,
+        totalAmount: totalPricesResolved,
+        shippingAddress1,
+        city,
+        postalCode,
+        country,
+        phone,
+        orderItems: orderItemsIdsResolved,
+      });
     const savedOrder = await newOrder.save();
     res.status(201).json(savedOrder); // Created status code
   } catch (error) {
@@ -66,7 +54,7 @@ const createOrder = asyncHandler(async (req, res) => {
 const getAllOrders = asyncHandler(async (req, res) => {
   try {
     const orders = await Order.find()
-      .populate("user", "name")
+      .populate("user", "name email")
       .populate("orderItems")
       .populate({ path: "orderItems", populate: "product" }); // Populate user and product details
     if (!orders) {
@@ -85,7 +73,7 @@ const getOrderById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   try {
-    const order = await Order.findById(id).populate("user").populate({path: "orderItems", populate: "product"});
+    const order = await Order.findById(id).populate("user").populate({ path: "orderItems", populate: "product" });
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
@@ -130,11 +118,10 @@ const deleteOrder = asyncHandler(async (req, res) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    await order.orderItems.map(async orderItem => {
+    await order.orderItems.map(async (orderItem) => {
       await OrderItem.findById(orderItem._id);
       await orderItem.deleteOne();
-
-    })
+    });
     await order.deleteOne();
     res.json({ message: "Order deleted successfully" });
   } catch (error) {

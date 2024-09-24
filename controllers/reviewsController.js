@@ -32,7 +32,7 @@ createReview = asyncHandler(async (req, res) => {
   // Update the product with the new review
   const updatedProduct = await Product.findByIdAndUpdate(
     product,
-    { $push: { reviews: createdReview._id } },
+    { $push: { reviews: createdReview.id } },
     { new: true } // Return the updated document
   ).populate("reviews");
 
@@ -81,7 +81,7 @@ deleteReview = asyncHandler(async (req, res) => {
   product.reviews = product.reviews.filter((r) => r.toString() !== reviewId);
 
   // Recalculate the star rating
-  const updatedReviews = await Review.find({ _id: { $in: product.reviews } });
+  const updatedReviews = await Review.find({ id: { $in: product.reviews } });
 
   product.star = updatedReviews.reduce((acc, r) => acc + r.rating, 0) / updatedReviews.length;
   product.numReviews = product.product - 1;

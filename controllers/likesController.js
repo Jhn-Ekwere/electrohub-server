@@ -20,7 +20,7 @@ toggleLike = asyncHandler(async (req, res) => {
     // User already liked the product, remove the like
     await existingLike.deleteOne();
     // Remove like from product's likes array
-    product.likes.pull(existingLike._id);
+    product.likes.pull(existingLike.id);
     product.numLikes = product.numLikes - 1;
     await product.save();
     res.status(200).json({ message: "Like removed" });
@@ -29,7 +29,7 @@ toggleLike = asyncHandler(async (req, res) => {
     const like = new Like({ user: userId, product: productId });
     await like.save();
     // Add like to product's likes array
-    product.likes.push(like._id);
+    product.likes.push(like.id);
     // Example of updating the product review (increment numLikes)
     product.numLikes = product.numLikes + 1;
     await product.save();

@@ -51,7 +51,7 @@ deleteSubCategory = asyncHandler(async (req, res) => {
 // @route   GET /api/subcategories
 // @access  Public
 getSubCategories = asyncHandler(async (req, res) => {
-  const subCategories = await SubCategory.find({}).populate("category", "name description _id");
+  const subCategories = await SubCategory.find({}).populate("category", "name description id");
   res.json(subCategories);
 });
 
@@ -59,7 +59,7 @@ getSubCategories = asyncHandler(async (req, res) => {
 // @route   GET /api/subcategories/:id
 // @access  Public
 getSubCategoryById = asyncHandler(async (req, res) => {
-  const subCategory = await SubCategory.findById(req.params.id).populate("category", "name description _id");
+  const subCategory = await SubCategory.findById(req.params.id).populate("category", "name description id");
 
   if (!subCategory) {
     res.status(404);
@@ -68,7 +68,6 @@ getSubCategoryById = asyncHandler(async (req, res) => {
 
   res.json(subCategory);
 });
-
 
 module.exports = {
   addSubCategory,

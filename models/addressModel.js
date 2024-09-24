@@ -24,6 +24,13 @@ const addressSchema = new mongoose.Schema({
  
 });
 
+addressSchema.virtual("id").get(function () {
+  return this._id.toHexString();
+});
+
+addressSchema.set("toJSON", {
+  virtuals: true,
+});
 const Address = mongoose.model('Address', addressSchema);
 
 module.exports = Address;

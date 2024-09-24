@@ -4,13 +4,16 @@ const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 const cloudinary = require("../utils/cloudinary");
 const Address = require("../models/addressModel");
+const nodemailer = require("nodemailer");
+const Cart = require("../models/cartModel");
+const Product = require("../models/productModel");
 
 //@desc     Create user
 //@route    POST /api/users
 //@access   Public
 const registerUser = asyncHandler(async (req, res) => {
-  const { firstname, email, password, role } = req.body;
-  if (!firstname || !email || !password) {
+  const { firstName, email, password, role } = req.body;
+  if (!firstName || !email || !password) {
     res.status(400);
     throw new Error("Please add all fields");
   }
@@ -29,17 +32,17 @@ const registerUser = asyncHandler(async (req, res) => {
   // create user
   const user = await User.create({
     email,
-    firstname,
+    firstName,
     password: hashedPassword,
     role: role || "user",
   });
 
   if (user) {
     res.status(201).json({
-      id: user._id,
+      id: user.id,
       email: user.email,
       role: user?.role,
-      token: generateToken(user._id),
+      token: generateToken(user.id),
     });
   } else {
     res.status(400);
@@ -68,7 +71,7 @@ const loginUser = asyncHandler(async (req, res) => {
       res.status(200).json({
         role: user.role,
         profilePicture: user.profilePicture,
-        id: user._id,
+        id: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
@@ -78,7 +81,7 @@ const loginUser = asyncHandler(async (req, res) => {
         dateOfBirth: user.dateOfBirth,
         wishlist: user.wishlist,
         cart: user.cart,
-        token: generateToken(user._id),
+        token: generateToken(user.id),
       });
     } else {
       res.status(400);
@@ -110,8 +113,8 @@ const getUserById = asyncHandler(async (req, res) => {
   res.status(200).json(user);
 
   res.status(200).json({
-    id: _id,
-    firstname: user.firstname,
+    id: id,
+    firstName: user.firstName,
     email: user.email,
   });
 });
@@ -146,7 +149,6 @@ const updateUser = asyncHandler(async (req, res) => {
     wishlist,
     cart,
     role,
-
   } = req.body;
 
   const newAddress = new Address({
@@ -155,8 +157,8 @@ const updateUser = asyncHandler(async (req, res) => {
     state,
     country,
     postalCode,
-  })
-  
+  });
+
   const address = await newAddress.save();
 
   const user = await User.findById(req.params.id);
@@ -167,7 +169,7 @@ const updateUser = asyncHandler(async (req, res) => {
     profilePicture,
     firstName,
     email,
-    address: address._id,
+    address: address.id,
     phone,
     likes,
     dateOfBirth,
@@ -226,17 +228,193 @@ const updateUser = asyncHandler(async (req, res) => {
   res.status(200).json({ message: `Updated user with id ${req.params.id}!` });
 });
 
-//@desc     Delete user
-//@route    DELETE /api/users/:id
-//@access   Public
-const deleteUser = asyncHandler(async (req, res) => {
+//@desc   toggle user role
+//@route  PUT /api/users/:id/toggle-role
+//@access Private
+const toggleRole = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
   if (!user) {
     res.status(404);
     throw new Error("User not found");
   }
+  const role = user.role === "admin" ? "user" : "admin";
+  await user.updateOne({ role });
+  res.status(200).json({ message: `Updated user role with id ${req.params.id}!` });
+});
+
+//@desc     change password
+//@route    PUT /api/users/:id/change-password
+//@access   Public
+const changePassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+  const isMatch = await bcrypt.compare(oldPassword, user.password);
+  if (!isMatch) {
+    res.status(400);
+    throw new Error("Invalid credentials");
+  }
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(newPassword, salt);
+  await user.updateOne({ password: hashedPassword });
+  res.status(200).json({ message: `Updated user password with id ${req.params.id}!` });
+});
+
+//@desc     Forgot password
+//@route    POST /api/users/forgot-password
+//@access   Public
+const forgotPassword = asyncHandler(async (req, res) => {
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  // Generate reset token
+  const resetToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+  // Set token and expiration on user
+  user.resetPasswordToken = resetToken;
+  user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+
+  await user.save();
+
+  // Create reset URL
+  const resetUrl = `${process.env.CLIENT_URL}/auth/reset-password/${resetToken}`;
+
+  const message = `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n
+           Please click on the following link, or paste this into your browser to complete the process:\n\n
+           ${resetUrl}\n\n
+           If you did not request this, please ignore this email and your password will remain unchanged.\n`;
+
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      to: user.email,
+      from: process.env.EMAIL_USER,
+      subject: "Password Reset",
+      text: message,
+    };
+
+    transporter.sendMail(mailOptions, (err, info) => {
+      if (err) {
+        console.error("Error sending email:", err);
+        res.status(500);
+        throw new Error("Error sending email");
+      } else {
+        res.status(200).json({ message: "Email sent", info });
+      }
+    });
+  } catch (error) {
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+    res.status(500);
+    throw new Error("Email could not be sent");
+  }
+});
+
+//@desc     Reset password
+//@route    POST /api/users/reset-password/:resetToken
+//@access   Public
+const resetPassword = asyncHandler(async (req, res) => {
+  const { resetToken } = req.params;
+  const { password } = req.body;
+
+  const user = await User.findOne({
+    resetPasswordToken: resetToken,
+    resetPasswordExpires: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    res.status(400);
+    throw new Error("Invalid or expired token");
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+
+  user.password = hashedPassword;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpires = undefined;
+
+  await user.save();
+
+  res.status(200).json({ message: "Password reset successful" });
+});
+
+//@desc     Delete user
+//@route    DELETE /api/users/:id
+//@access   Public
+const deleteUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  // get address from user.address and find
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+  const address = await Address.findById(user.address);
+  if (!address) {
+    console.log("No address found");
+  }
+  await address.deleteOne();
   await user.deleteOne();
   res.status(200).json({ message: `Deleted user with id ${req.params.id}!` });
+});
+
+//@desc     Add Products to a Cart
+//@route    POST /api/auth/carts/:userId/products
+//@access   Private
+const addProductsToCart = asyncHandler(async (req, res) => {
+  const cartItems = req.body;
+  const userId = req.params.userId;
+  const user = await User.findById(userId);
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  const cart = await Cart.findById(user.cart).populate("products.product");
+
+  if (cart) {
+    for (let index = 0; index < cartItems.length; index++) {
+      const existingProduct = cart.products.find((p) => p.product.id.toString() === cartItems[index].id);
+      cartItems[index].id;
+      if (existingProduct) {
+        existingProduct.cartQuantity = cartItems[index].cartQuantity;
+        const newCart = await cart.save();
+        await user.updateOne({ cart: newCart.id });
+      } else {
+        cart.products.push({ product: cartItems[index].id, quantity: cartItems[index].cartQuantity });
+        const newCart = await cart.save();
+        await user.updateOne({ cart: newCart.id });
+      }
+    }
+  } else {
+    const newCart = new Cart({
+      products: [],
+    });
+    for (let index = 0; index < cartItems.length; index++) {
+      newCart.products.push({ product: cartItems[index].id, quantity: cartItems[index].cartQuantity });
+    }
+    const cart = await newCart.save();
+    await user.updateOne({ cart: cart.id });
+  }
+
+  res.status(200).json({ message: `Added products to cart with id ${user.cart}!` });
 });
 
 // Generate token
@@ -246,4 +424,17 @@ const generateToken = (id) => {
   });
 };
 
-module.exports = { getUsers, getMe, registerUser, updateUser, deleteUser, loginUser, getUserById };
+module.exports = {
+  getUsers,
+  getMe,
+  registerUser,
+  updateUser,
+  deleteUser,
+  loginUser,
+  getUserById,
+  toggleRole,
+  changePassword,
+  forgotPassword,
+  resetPassword,
+  addProductsToCart,
+};

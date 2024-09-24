@@ -8,7 +8,9 @@ const {
   deleteNotification,
 } = require("../controllers/notificationController");
 
-router.route("/").post( createNotification).get( getNotificationsForUser);
+router.route("/").post(createNotification)
+router.route("/:userId").get(getNotificationsForUser);
+  
 router.route("/mark/:id").put( markNotificationAsRead);
 router.route("/:id").delete( deleteNotification);
 

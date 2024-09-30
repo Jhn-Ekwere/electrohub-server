@@ -257,6 +257,12 @@ const changePassword = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("Invalid credentials");
   }
+  // check that old password is not the same as new password
+  const isSame = await bcrypt.compare(newPassword, user.password);
+  if (isSame) {
+    res.status(400);
+    throw new Error("New password cannot be the same as old password");
+  }
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(newPassword, salt);
   await user.updateOne({ password: hashedPassword });

@@ -10,7 +10,7 @@ const reviewSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Product",
     required: true,
-  }, // Reference to the reviewed product
+  },
   rating: { type: Number, required: true, min: 1, max: 5 }, // Rating (e.g., star rating)
   comment: {
     type: String,
@@ -26,7 +26,6 @@ reviewSchema.virtual("id").get(function () {
 reviewSchema.set("toJSON", {
   virtuals: true,
 });
-
 
 const Review = mongoose.model("Review", reviewSchema);
 module.exports = Review;

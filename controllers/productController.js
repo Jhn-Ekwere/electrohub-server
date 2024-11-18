@@ -12,7 +12,8 @@ const getProducts = asyncHandler(async (req, res) => {
     .populate("reviews", "-__v -createdAt")
     .populate("category", "-__v -createdAt")
     .populate("subcategory", "-__v -createdAt")
-    .populate("likes", "-__v -createdAt");
+    .populate("likes", "-__v -createdAt")
+  .populate({path: "reviews", populate: {path: "user", select: "name id "}})
 
   if (!product) {
     return res.status(404).json({ message: "Product not found" });
@@ -243,11 +244,12 @@ const reviewProduct = asyncHandler(async (req, res) => {
       throw new Error("Product already reviewed by this user");
     }
 
+    console.log(productId);
     const review = {
-      name: req.user.name, // Assuming the user's name is attached to the request object
+      product: productId, // Assuming the user's name is attached to the request object
       rating: Number(rating),
       comment,
-      userId,
+      user: userId,
     };
 
     product.reviews.push(review);

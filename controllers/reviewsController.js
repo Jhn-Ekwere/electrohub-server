@@ -42,7 +42,7 @@ createReview = asyncHandler(async (req, res) => {
 
   // Update the product's star rating
   updatedProduct.star = updatedStarRating;
-  updatedProduct.numReviews = product.updatedProduct + 1;
+  updatedProduct.numReviews = updatedProduct.numReviews + 1;
   await updatedProduct.save();
 
   return res.status(201).json({ message: "Review added successfully", review: createdReview });
@@ -83,8 +83,9 @@ deleteReview = asyncHandler(async (req, res) => {
   // Recalculate the star rating
   const updatedReviews = await Review.find({ id: { $in: product.reviews } });
 
-  product.star = updatedReviews.reduce((acc, r) => acc + r.rating, 0) / updatedReviews.length;
-  product.numReviews = product.product - 1;
+  const calculatedStar = updatedReviews.length > 0 ? updatedReviews.reduce((acc, r) => acc + r.rating, 0) / updatedReviews.length : 0;
+  product.star = Math.max(calculatedStar, 1);
+  product.numReviews = product.numReviews - 1;
 
   // Save the updated product
   await product.save();

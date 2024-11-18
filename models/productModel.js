@@ -27,8 +27,7 @@ const productSchema = new mongoose.Schema(
       required: true,
     },
     discount: {
-      type: Number,
-      required: true,
+      type: Number, 
       default: 0,
       min: 0,
     },
@@ -57,8 +56,7 @@ const productSchema = new mongoose.Schema(
     },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Like" }],
     isProductNew: {
-      type: Boolean,
-      required: true,
+      type: Boolean, 
       default: true,
     },
     reviews: [

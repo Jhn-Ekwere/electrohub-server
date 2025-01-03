@@ -13,7 +13,7 @@ const getProducts = asyncHandler(async (req, res) => {
     .populate("category", "-__v -createdAt")
     .populate("subcategory", "-__v -createdAt")
     .populate("likes", "-__v -createdAt")
-  .populate({path: "reviews", populate: {path: "user", select: "name id "}})
+    .populate({ path: "reviews", populate: { path: "user", select: "name id " } });
 
   if (!product) {
     return res.status(404).json({ message: "Product not found" });
@@ -34,6 +34,8 @@ const getProductById = asyncHandler(async (req, res) => {
   if (!product) {
     return res.status(404).json({ message: "Product not found" });
   }
+
+  res.json(product);
 });
 
 // @desc     Create a product
